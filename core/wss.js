@@ -1,20 +1,33 @@
-// 导入WebSocket模块:
-const WebSocket = require('ws');
+const fs = require('fs');
 
-// 引用Server类:
-const WebSocketServer = WebSocket.Server;
+const keypath="../server.key";
+const crtpath="../server.crt";
+const port=3000;
 
-// 实例化:
-const connect = new WebSocketServer({
-    port: 3000
-});
+const cfg = {
+    port: port,
+    ssl_key: keypath,
+    ssl_cert: crtpath
+};
 function broadcast(data) {
     //所有的窗口都储存在connections里面，所以用循环把消息发给所有的窗口 
     connect.clients.forEach((connect) => { 								
         connect.send(data);  //sendText 服务端发送给客户端方法
     })
-}
-
+} 
+const httpServ = require('https');
+const WebSocketServer = require('ws').Server;
+const processRequest = (req, res) => {
+    res.writeHead(403);
+    res.end('<h1>403 Forbideen.</h1>');
+};
+const app = httpServ.createServer({
+    key: fs.readFileSync(cfg.ssl_key),
+    cert: fs.readFileSync(cfg.ssl_cert)
+}, processRequest).listen(cfg.port);
+const connect = new WebSocketServer({
+    server: app
+});
 connect.on('connection', function (ws) {
     console.log(`[SERVER] connection()`);
     ws.on('message', function (message) {
